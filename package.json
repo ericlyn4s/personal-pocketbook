@@ -12,6 +12,8 @@
   "dependencies": {
     "console.table": "^0.10.0",
     "inquirer": "^12.9.3",
+    "install": "^0.13.0",
     "mysql2": "^3.14.3"
-  }
+  },
+  "type": "module"
 }
