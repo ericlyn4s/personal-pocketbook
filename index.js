@@ -38,22 +38,7 @@ async function queryType(answers) {
             break;
         // Case 2: View Expenses
         case 'View Expenses':
-            // Query role table for all values, join to category table to pull in category name
-            db.query('SELECT e.amount, e.description, c.name, e.expense_date FROM expense AS e JOIN category AS c ON e.category_id = c.id', function (err, results) {
-                const formattedResults = results.map((expense, index) => ({
-                    Amount: `$${expense.amount}`,
-                    Description: expense.description,
-                    Category: expense.name,
-                    Date: new Date(expense.expense_date).toLocaleDateString('en-US', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        year: 'numeric'
-                    })
-                }));
-                console.log('Formatted results:');
-                console.table(formattedResults);
-                init();
-            });
+            await viewExpenses();
             break;
         // Case 3: View Budget
         case 'View Budget':
@@ -70,7 +55,7 @@ async function queryType(answers) {
     } 
 };
 
-// Create a function to prompt user selection and execute choice
+// Create a startup function to prompt user selection and execute choice
 async function init() {
     try {
         const answers = await inquirer.prompt(initialQuestion);
@@ -80,40 +65,69 @@ async function init() {
     }
 }
 
-// Create a function to add an expense after obtaining user input
-async function addExpense() {
+// Create a function to view all expenses
+async function viewExpenses() {
     try {
-        const expenseAnswers = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'amount',
-                message: 'Enter expense amount:'
-            },
-            {
-                type: 'input',
-                name: 'description',
-                message: 'Enter description:'
-            },
-            {
-                type: 'input',
-                name: 'category',
-                message: 'Enter category ID:'
-            },
-        ]);
-
-        db.query('INSERT INTO expense (amount, description, category_id, expense_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, expenseAnswers.category_id, new Date()], (err, results) => {
-            if (err) console.log('Error inserting expense:', err);
-            else console.log('Expense added successfully!');
-            db.query('SELECT * FROM expense', (err, results) => {
-    console.log('All expenses:', results);
-});
-            init(); // Go back to main menu
-        });
-        
+        // Query role table for all values, join to category table to pull in category name
+        db.query('SELECT e.amount, e.description, c.name, e.expense_date FROM expense AS e JOIN category AS c ON e.category_id = c.id', function (err, results) {
+            // Run results through a formatting function 
+            const formattedResults = results.map((expense, index) => ({
+                Amount: `$${expense.amount}`,
+                Description: expense.description,
+                Category: expense.name,
+                // Format the default timestring as a 'MM/DD/YYYY' string
+                Date: new Date(expense.expense_date).toLocaleDateString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    year: 'numeric'
+                })
+            }));
+            // Return the formatted table
+            console.table(formattedResults);
+            init();
+            });
+    // Handle database and user input errors, then return to main menu
     } catch (error) {
         console.log('Error:', error);
         init();
     }
+}
+
+// Create a function to add an expense after obtaining user input
+async function addExpense() {
+    try {
+        // Prompt user for expense details: amount, description, and category ID
+        const expenseAnswers = await inquirer.prompt([
+            {
+                type: 'input',
+                message: 'Enter expense amount:',
+                name: 'amount'                
+            },
+            {
+                type: 'input',
+                message: 'Enter description:',
+                name: 'description'
+            },
+            {
+                type: 'input',
+                message: 'Enter category ID:',
+                name: 'category_id'                
+            },
+        ]);
+
+        db.query('INSERT INTO expense (amount, description, category_id, expense_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, expenseAnswers.category_id, new Date()], (err, results) => {
+            if (err) {
+                console.log('Error inserting expense:', err)
+            } else {
+                console.log('Expense added successfully!');
+            }
+            init();
+        }
+    );
+    } catch (error) {
+        console.log('Error:', error);
+        init();
+    } 
 }
 
 // Start the init function at application startup
