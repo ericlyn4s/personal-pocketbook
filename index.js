@@ -69,12 +69,18 @@ async function init() {
 async function viewExpenses() {
     try {
         // Query role table for all values, join to category table to pull in category name
-        db.query('SELECT e.amount, e.description, c.name, e.entry_date FROM expense AS e JOIN category AS c ON e.category_id = c.id', function (err, results) {
+        db.query('SELECT e.amount, e.description, c.name, e.transaction_date, e.entry_date FROM expense AS e JOIN category AS c ON e.category_id = c.id', function (err, results) {
             // Run results through a formatting function 
             const formattedResults = results.map((expense, index) => ({
                 'Amount': `$${expense.amount}`,
                 'Description': expense.description,
                 'Category': expense.name,
+                // Format the transaction date as a 'MMM-YY' string
+                'Transaction Date': new Date(expense.transaction_date).toLocaleDateString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    year: 'numeric'
+                }),
                 // Format the default timestring as a 'MM/DD/YYYY' string
                 'Entry Date': new Date(expense.entry_date).toLocaleDateString('en-US', {
                     month: '2-digit',

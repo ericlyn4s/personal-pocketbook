@@ -28,6 +28,7 @@ CREATE TABLE expense (
     amount DECIMAL,
     description VARCHAR(30),
     category_id INT,
+    transaction_date DATE NOT NULL,
     entry_date DATE NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (category_id)
