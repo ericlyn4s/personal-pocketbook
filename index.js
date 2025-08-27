@@ -115,6 +115,36 @@ async function addExpense() {
             // Map these category names to an array called 'catArray'
             const catArray = rows.map(row => row.name);
 
+            // Declare a date check function to ensure transaction_date is correct format
+            const validateDate = (input) => {
+            // Check if it matches YYYY-MM-DD format exactly
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(input)) {
+                return 'Please enter date in YYYY-MM-DD format (e.g., 2025-08-27)';
+            }
+            
+            // Breakout string into year, month and day components
+            const date = new Date(input + 'T00:00:00'); // Add time to avoid timezone issues
+            const parts = input.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+            
+            // Verify that date is not in the future
+            if (date > new Date()) {
+                return "Date cannot be in the future";
+            }
+
+            // Verify the date components match (catches invalid dates like Feb 30)
+            if (date.getFullYear() !== year || 
+                date.getMonth() + 1 !== month || 
+                date.getDate() !== day) {
+                return 'Please enter a valid date';
+            }
+            
+            return true;
+            };
+
             // Prompt user for expense details: amount, description, and category ID
             const expenseAnswers = await inquirer.prompt([
             {
@@ -123,23 +153,30 @@ async function addExpense() {
                 name: 'amount'                
             },
             {
-                type: 'input',
-                message: 'Enter description:',
-                name: 'description'
-            },
-            {
                 type: 'list',
                 message: 'Select category:',
                 name: 'category_name' ,
                 choices: catArray       
             },
+            {
+                type: 'input',
+                message: 'Enter description:',
+                name: 'description'
+            },
+            {
+                type: 'input',
+                message: 'Enter expense date (YYYY-MM-DD) or press Enter for today:',
+                name: 'transactionDate',
+                default: new Date().toISOString().split('T')[0], // Today's date
+                validate: validateDate
+            }
             ]);
 
             // Find the actual category ID to be passed into expense table
             const selectedCategory = catArray.indexOf(expenseAnswers.category_name)+1;
 
             // Insert the user input into the expense table
-            db.query('INSERT INTO expense (amount, description, category_id, entry_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, selectedCategory, new Date()], (err, results) => {
+            db.query('INSERT INTO expense (amount, description, category_id, transaction_date, entry_date) VALUES (?, ?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, selectedCategory, expenseAnswers.transactionDate, new Date()], (err, results) => {
                 if (err) {
                     console.log('Error inserting expense:', err)
                 } else {
