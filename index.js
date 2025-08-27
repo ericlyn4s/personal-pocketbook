@@ -69,14 +69,14 @@ async function init() {
 async function viewExpenses() {
     try {
         // Query role table for all values, join to category table to pull in category name
-        db.query('SELECT e.amount, e.description, c.name, e.expense_date FROM expense AS e JOIN category AS c ON e.category_id = c.id', function (err, results) {
+        db.query('SELECT e.amount, e.description, c.name, e.entry_date FROM expense AS e JOIN category AS c ON e.category_id = c.id', function (err, results) {
             // Run results through a formatting function 
             const formattedResults = results.map((expense, index) => ({
-                Amount: `$${expense.amount}`,
-                Description: expense.description,
-                Category: expense.name,
+                'Amount': `$${expense.amount}`,
+                'Description': expense.description,
+                'Category': expense.name,
                 // Format the default timestring as a 'MM/DD/YYYY' string
-                Date: new Date(expense.expense_date).toLocaleDateString('en-US', {
+                'Entry Date': new Date(expense.entry_date).toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'
@@ -132,7 +132,8 @@ async function addExpense() {
             // Find the actual category ID to be passed into expense table
             const selectedCategory = catArray.indexOf(expenseAnswers.category_name)+1;
 
-            db.query('INSERT INTO expense (amount, description, category_id, expense_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, selectedCategory, new Date()], (err, results) => {
+            // Insert the user input into the expense table
+            db.query('INSERT INTO expense (amount, description, category_id, entry_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, selectedCategory, new Date()], (err, results) => {
                 if (err) {
                     console.log('Error inserting expense:', err)
                 } else {

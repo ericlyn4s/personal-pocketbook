@@ -21,7 +21,7 @@ VALUES
     (100, 7);
 
 -- Insert two expenses into the expense table
-INSERT INTO expense (amount, description, category_id, expense_date)
+INSERT INTO expense (amount, description, category_id, entry_date)
 VALUES  
     (1500, 'August Rent', 1, '2025-08-01'),
     (45, 'Gas', 3, '2025-08-15');
