@@ -96,8 +96,21 @@ async function viewExpenses() {
 // Create a function to add an expense after obtaining user input
 async function addExpense() {
     try {
-        // Prompt user for expense details: amount, description, and category ID
-        const expenseAnswers = await inquirer.prompt([
+        // Compile array of categories to include in prompt
+        db.query('SELECT id, name FROM category', async (err, rows) => {
+
+            // Add error catch for category compilation component
+            if (err) {
+                console.log('Error fetching categories:', err);
+                init();
+                return;
+            }
+
+            // Map these category names to an array called 'catArray'
+            const catArray = rows.map(row => row.name);
+
+            // Prompt user for expense details: amount, description, and category ID
+            const expenseAnswers = await inquirer.prompt([
             {
                 type: 'input',
                 message: 'Enter expense amount:',
@@ -109,21 +122,25 @@ async function addExpense() {
                 name: 'description'
             },
             {
-                type: 'input',
-                message: 'Enter category ID:',
-                name: 'category_id'                
+                type: 'list',
+                message: 'Select category:',
+                name: 'category_name' ,
+                choices: catArray       
             },
-        ]);
+            ]);
 
-        db.query('INSERT INTO expense (amount, description, category_id, expense_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, expenseAnswers.category_id, new Date()], (err, results) => {
-            if (err) {
-                console.log('Error inserting expense:', err)
-            } else {
-                console.log('Expense added successfully!');
-            }
-            init();
-        }
-    );
+            // Find the actual category ID to be passed into expense table
+            const selectedCategory = catArray.indexOf(expenseAnswers.category_name)+1;
+
+            db.query('INSERT INTO expense (amount, description, category_id, expense_date) VALUES (?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, selectedCategory, new Date()], (err, results) => {
+                if (err) {
+                    console.log('Error inserting expense:', err)
+                } else {
+                    console.log('Expense added successfully!');
+                }
+                init();
+            });
+        });
     } catch (error) {
         console.log('Error:', error);
         init();
