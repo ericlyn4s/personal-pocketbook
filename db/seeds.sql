@@ -1,24 +1,24 @@
 -- Insert four categories into the category table
 INSERT INTO category (name)
 VALUES
-    ('Rent'),
-    ('Utilities'),
-    ('Transportation'),
-    ('Groceries'),
     ('Dining'),
+    ('Groceries'),
     ('Entertainment'),
+    ('Transportation'),
+    ('Rent'),
+    ('Utilities'),    
     ('Misc');
 
 -- Insert seven budget categories into the budget table
-INSERT INTO budget (budget_limit, category_id)
+INSERT INTO budget (budget_limit, balance, category_id)
 VALUES
-    (1500, 1),
-    (100, 2),
-    (50, 3),
-    (350, 4),
-    (500, 5),
-    (65, 6),
-    (100, 7);
+    (200, 200, 1),
+    (200, 200, 2),
+    (100, 100, 3),
+    (100, 100, 4),
+    (1500, 1500, 5),
+    (65, 65, 6),
+    (100, 100, 7);
 
 -- Insert two expenses into the expense table
 INSERT INTO expense (amount, description, category_id, transaction_date, entry_date)

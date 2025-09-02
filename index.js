@@ -1,5 +1,5 @@
 // Import inquirer and mysql modules
-import mysql from 'mysql2';
+import mysql, { format } from 'mysql2';
 import inquirer from 'inquirer';
 
 // Connect to database
@@ -43,10 +43,18 @@ async function queryType(answers) {
         // Case 3: View Budget
         case 'View Budget':
             // Query budget table for all values, join to category table to pull in category name
-            db.query('SELECT c.name, b.budget_limit FROM budget AS b JOIN category AS c ON b.category_id = c.id', function (err, results) {
-                console.table(results);
+            db.query('SELECT c.name, b.budget_limit, b.balance FROM budget AS b JOIN category AS c ON b.category_id = c.id', function (err, results) {
+                const formattedResults = results.map((budget, index) => ({
+                'Budget': `$${budget.budget_limit}`,
+                'Balance': budget.balance < 0 ? `-$${Math.abs(budget.balance)}` : `$${budget.balance}`,
+                'Category': budget.name,
+                }));
+                const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
+                const yearName = new Date().toLocaleDateString('en-US', { year: 'numeric' });
+                console.log(`Budget for ${monthName} ${yearName}:`);
+                console.table(formattedResults);
                 init();
-            })
+            });
             break;
         // Case 4: Exit Application
         default: 
@@ -179,12 +187,35 @@ async function addExpense() {
             db.query('INSERT INTO expense (amount, description, category_id, transaction_date, entry_date) VALUES (?, ?, ?, ?, ?)', [expenseAnswers.amount, expenseAnswers.description, selectedCategory, expenseAnswers.transactionDate, new Date()], (err, results) => {
                 if (err) {
                     console.log('Error inserting expense:', err)
+                    init();
                 } else {
                     console.log('Expense added successfully!');
-                }
-                init();
-            });
+                    // Update the budget balance
+                    db.query('UPDATE budget SET balance = balance - ? WHERE category_id = ?', [expenseAnswers.amount, selectedCategory], (updateErr, updateResults) => {
+                        if (updateErr) {
+                            console.log('Error updating category balance:', updateErr);
+                        } else {
+                             // Query to get the updated balance
+                            db.query('SELECT b.balance, c.name FROM budget b JOIN category c ON b.category_id = c.id WHERE b.category_id = ?', [selectedCategory], (selectErr, selectResults) => {
+                                if (selectErr) {
+                                    console.log('Error fetching updated balance:', selectErr);
+                                } else {
+                                    const categoryName = selectResults[0].name;
+                                    // If balance is <$0, format the result as '-$XXX'
+                                    const formattedBalance = selectResults[0].balance < 0 ? `-$${Math.abs(selectResults[0].balance)}` : `$${selectResults[0].balance}`;
+                                    if (selectResults[0].balance < 0) {
+                                        console.log(`WARNING! You've overspent your budget for ${categoryName}! Current balance: ${formattedBalance}`);
+                                    } else {
+                                        console.log(`Balance for ${categoryName} now ${formattedBalance}`);
+                                    }
+                                }
+                                init();
+                            });
+                        }
+                    });
+            }
         });
+    })
     } catch (error) {
         console.log('Error:', error);
         init();

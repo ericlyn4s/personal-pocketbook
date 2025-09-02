@@ -15,6 +15,7 @@ CREATE TABLE category (
 CREATE TABLE budget (
     id INT AUTO_INCREMENT,
     budget_limit DECIMAL,
+    balance DECIMAL,
     category_id INT,
     PRIMARY KEY (id),
     FOREIGN KEY (category_id)
